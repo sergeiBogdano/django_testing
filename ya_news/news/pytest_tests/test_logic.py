@@ -1,87 +1,58 @@
 import pytest
-from django.contrib.auth.models import User
-from django.urls import reverse
+from http import HTTPStatus
 
 from news.forms import BAD_WORDS
-from news.models import Comment, News
+from news.models import Comment
 
 pytestmark = pytest.mark.django_db
 
 
-@pytest.fixture
-def news_detail_url(news):
-    return reverse('news:detail', args=[news.id])
-
-
-@pytest.fixture
-def comment_edit_url(comment):
-    return reverse('news:edit', args=[comment.id])
-
-
-@pytest.fixture
-def comment_delete_url(comment):
-    return reverse('news:delete', args=[comment.id])
-
-
-@pytest.fixture
-def user(db):
-    return User.objects.create_user(username='user', password='password')
-
-
-@pytest.fixture
-def another_user(db):
-    return User.objects.create_user(
-        username='another_user',
-        password='password'
-    )
-
-
-@pytest.fixture
-def news(db):
-    return News.objects.create(title='Test News', text='Test Content')
-
-
-@pytest.fixture
-def comment(db, user, news):
-    return Comment.objects.create(
-        text='Test Comment',
-        author=user,
-        news=news
-    )
-
-
-def test_anonymous_user_cannot_modify_database(client, news_detail_url):
+def test_anonymous_user_cannot_create_comment(client, news_detail_url):
+    initial_comment_count = Comment.objects.count()
     response = client.post(news_detail_url, {'text': 'Anonymous comment'})
-    assert response.status_code == 302
-    assert Comment.objects.count() == 0
+    assert response.status_code == HTTPStatus.FOUND
+    assert Comment.objects.count() == initial_comment_count
 
 
-def test_authenticated_user_can_post_comment(client, user, news):
-    client.login(username='user', password='password')
-    news_detail_url = reverse('news:detail', args=[news.id])
-    response = client.post(news_detail_url, {'text': 'User comment'})
-    assert response.status_code == 302
-    assert Comment.objects.filter(author=user, news=news).count() == 1
-
-
-@pytest.mark.parametrize('forbidden_word', BAD_WORDS)
-def test_comment_with_forbidden_words(
-    client, user, news_detail_url, forbidden_word
+def test_authenticated_user_can_create_comment(
+        client,
+        user,
+        news_detail_url,
+        news
 ):
     client.login(username='user', password='password')
-    response = client.post(
-        news_detail_url, {'text': f'This comment contains {forbidden_word}'}
-    )
-    assert response.status_code == 200
+    comment_data = {'text': 'User comment'}
+    initial_comment_count = Comment.objects.count()
+    response = client.post(news_detail_url, data=comment_data)
+    assert response.status_code == HTTPStatus.FOUND
+    assert Comment.objects.count() == initial_comment_count + 1
+    new_comment = Comment.objects.latest('id')
+    assert new_comment.text == 'User comment'
+    assert new_comment.author == user
+    assert new_comment.news == news
+
+
+@pytest.mark.parametrize("forbidden_word", BAD_WORDS)
+def test_comment_with_forbidden_words(
+        client,
+        user,
+        news_detail_url,
+        forbidden_word
+):
+    client.login(username='user', password='password')
+    comment_data = {'text': f'This comment contains {forbidden_word}'}
+    response = client.post(news_detail_url, data=comment_data)
+    assert response.status_code == HTTPStatus.OK
     assert 'form' in response.context
     assert response.context['form'].errors
-    assert Comment.objects.count() == 0
+    assert not Comment.objects.filter(text=comment_data['text']).exists()
 
 
 def test_user_can_edit_own_comment(client, user, comment, comment_edit_url):
     client.login(username='user', password='password')
-    response = client.post(comment_edit_url, {'text': 'Edited comment'})
-    assert response.status_code == 302
+    updated_comment_data = {'text': 'Edited comment'}
+    response = client.post(comment_edit_url, data=updated_comment_data)
+    assert response.status_code == HTTPStatus.FOUND
     updated_comment = Comment.objects.get(id=comment.id)
     assert updated_comment.text == 'Edited comment'
     assert updated_comment.author == user
@@ -89,11 +60,14 @@ def test_user_can_edit_own_comment(client, user, comment, comment_edit_url):
 
 
 def test_user_cannot_edit_others_comment(
-    client, another_user, comment, comment_edit_url
+        client,
+        another_user,
+        comment,
+        comment_edit_url
 ):
     client.login(username='another_user', password='password')
     response = client.post(comment_edit_url, {'text': 'Attempted edit'})
-    assert response.status_code == 404
+    assert response.status_code == HTTPStatus.NOT_FOUND
     unchanged_comment = Comment.objects.get(id=comment.id)
     assert unchanged_comment.text == 'Test Comment'
 
@@ -106,14 +80,20 @@ def test_user_can_delete_own_comment(
 ):
     client.login(username='user', password='password')
     response = client.post(comment_delete_url)
-    assert response.status_code == 302
+    assert response.status_code == HTTPStatus.FOUND
     assert not Comment.objects.filter(id=comment.id).exists()
 
 
 def test_user_cannot_delete_others_comment(
-    client, another_user, comment, comment_delete_url
+        client,
+        another_user,
+        comment,
+        comment_delete_url
 ):
     client.login(username='another_user', password='password')
     response = client.post(comment_delete_url)
-    assert response.status_code == 404
-    assert Comment.objects.filter(id=comment.id).exists()
+    assert response.status_code == HTTPStatus.NOT_FOUND
+    existing_comment = Comment.objects.get(id=comment.id)
+    assert existing_comment.text == 'Test Comment'
+    assert existing_comment.author == comment.author
+    assert existing_comment.news == comment.news
