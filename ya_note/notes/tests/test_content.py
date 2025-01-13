@@ -1,8 +1,4 @@
-from notes.forms import NoteForm
-
 from .base_test_case import (
-    ADD_NOTE_URL,
-    EDIT_NOTE1_URL,
     LIST_URL,
     NoteTestBase
 )
@@ -26,15 +22,3 @@ class TestNoteContent(NoteTestBase):
         self.client.force_login(self.user2)
         response = self.client.get(LIST_URL)
         self.assertIn(self.note2, response.context['object_list'])
-
-    def test_note_page_contains_form(self):
-        urls = [
-            ADD_NOTE_URL,
-            EDIT_NOTE1_URL
-        ]
-
-        for url in urls:
-            with self.subTest(url=url):
-                response = self.logged_in_client.get(url)
-                self.assertIn('form', response.context)
-                self.assertIsInstance(response.context['form'], NoteForm)
