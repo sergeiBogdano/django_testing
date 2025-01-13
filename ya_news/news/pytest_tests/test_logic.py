@@ -9,6 +9,9 @@ pytestmark = pytest.mark.django_db
 
 COMMENT_DATA = {'text': 'Sample comment'}
 COMMENT_TEMPLATE = {'text': 'This comment contains {}'}
+COMMENT_DATA_WITH_FORBIDDEN_WORDS = [
+    {'text': COMMENT_TEMPLATE['text'].format(word)} for word in BAD_WORDS
+]
 
 
 def test_anonymous_user_cannot_create_comment(client, news_detail_url):
@@ -37,17 +40,18 @@ def test_authenticated_user_can_create_comment(
     assert new_comment.news == news
 
 
-@pytest.mark.parametrize("forbidden_word", BAD_WORDS)
+@pytest.mark.parametrize("comment_data", COMMENT_DATA_WITH_FORBIDDEN_WORDS)
 def test_comment_with_forbidden_words(
         client_logged_in,
         news_detail_url,
-        forbidden_word
+        comment_data
 ):
-    comment_data = {'text': COMMENT_TEMPLATE['text'].format(forbidden_word)}
+    initial_comments = set(Comment.objects.all())
     response = client_logged_in.post(news_detail_url, data=comment_data)
     assert response.status_code == HTTPStatus.OK
     assert 'form' in response.context
     assert response.context['form'].errors
+    assert set(Comment.objects.all()) == initial_comments
 
 
 def test_user_can_edit_own_comment(

@@ -1,9 +1,19 @@
-from datetime import timedelta, datetime
+from datetime import datetime, timedelta
+
 import pytest
 from django.contrib.auth.models import User
 from django.urls import reverse
 
 from news.models import Comment, News
+
+CLIENT_FIXTURE = pytest.lazy_fixture('client')
+HOME_URL_FIXTURE = pytest.lazy_fixture('home_url')
+NEWS_DETAIL_URL_FIXTURE = pytest.lazy_fixture('news_detail_url')
+SIGNUP_URL_FIXTURE = pytest.lazy_fixture('signup_url')
+LOGIN_URL_FIXTURE = pytest.lazy_fixture('login_url')
+LOGOUT_URL_FIXTURE = pytest.lazy_fixture('logout_url')
+COMMENT_EDIT_URL_FIXTURE = pytest.lazy_fixture('comment_edit_url')
+COMMENT_DELETE_URL_FIXTURE = pytest.lazy_fixture('comment_delete_url')
 
 
 @pytest.fixture
@@ -90,23 +100,32 @@ def many_news_entries(db):
     news_list = []
     base_date = datetime.now().date()
     for i in range(222):
-        news = News.objects.create(
+        news = News(
             title=f'Test News {i+1}',
             text=f'Content for news {i+1}',
             date=base_date + timedelta(days=i)
         )
         news_list.append(news)
-    return news_list
+    News.objects.bulk_create(news_list)
 
 
 @pytest.fixture
 def many_comments(db, user, news):
-    comments = []
-    for i in range(222):
-        comment = Comment.objects.create(
-            text=f'Comment {i+1}',
-            author=user,
-            news=news
-        )
-        comments.append(comment)
-    return comments
+    comments = [Comment(
+        text=f'Comment {i + 1}',
+        author=user,
+        news=news
+    ) for i in range(222)]
+    Comment.objects.bulk_create(comments)
+    sorted_comments = list(Comment.objects.filter(news=news).order_by('id'))
+    return sorted_comments
+
+
+@pytest.fixture
+def news_home_url():
+    return reverse('news:home')
+
+
+@pytest.fixture
+def news_detail_url(news):
+    return reverse('news:detail', args=[news.id])
