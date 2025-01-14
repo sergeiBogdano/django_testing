@@ -10,6 +10,9 @@ LIST_URL = reverse('notes:list')
 SUCCESS_URL = reverse('notes:success')
 ADD_NOTE_URL = reverse('notes:add')
 LOGIN_URL = reverse('users:login')
+EDIT_NOTE_URL = '/edit/{slug}/'
+DELETE_NOTE_URL = '/delete/{slug}/'
+DETAIL_NOTE_URL = '/detail/{slug}/'
 
 
 class NoteTestBase(TestCase):
@@ -26,10 +29,6 @@ class NoteTestBase(TestCase):
             title='Note 1', text='Content 1', author=cls.user1,
             slug='note-1'
         )
-        cls.note2 = Note.objects.create(
-            title='Note 2', text='Content 2', author=cls.user2,
-            slug='note-2'
-        )
         cls.note_data = {
             'title': 'New Note',
             'text': 'Some content',
@@ -41,10 +40,9 @@ class NoteTestBase(TestCase):
         cls.logged_in_client_user1.force_login(cls.user1)
         cls.logged_in_client_user2 = Client()
         cls.logged_in_client_user2.force_login(cls.user2)
+        cls.client_user2 = Client()
+        cls.client_user2.force_login(cls.user2)
 
-    def get_note_urls(self, note):
-        return {
-            'edit': reverse('notes:edit', args=[note.slug]),
-            'delete': reverse('notes:delete', args=[note.slug]),
-            'detail': reverse('notes:detail', args=[note.slug]),
-        }
+
+def get_login_redirect_url(next_url):
+    return f'{LOGIN_URL}?next={next_url}'
