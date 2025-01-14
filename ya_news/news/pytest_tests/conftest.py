@@ -114,24 +114,14 @@ def many_comments(db, user, news):
     ]
     for comment in comments:
         comment.save()
-    return sorted(comments, key=lambda c: c.id)
-
-
-@pytest.fixture
-def news_home_url():
-    return reverse('news:home')
-
-
-@pytest.fixture
-def news_detail_url(news):
-    return reverse('news:detail', args=[news.id])
+    return comments
 
 
 @pytest.fixture
 def comment_edit_redirect_url(news):
-    return reverse('news:detail', args=[news.id])
+    return news_detail_url(news)
 
 
 @pytest.fixture
 def comment_delete_redirect_url(news):
-    return reverse('news:detail', args=[news.id])
+    return news_detail_url(news)

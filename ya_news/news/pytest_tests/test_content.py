@@ -13,8 +13,8 @@ def test_comment_form_in_context(client_logged_in, news_detail_url):
 
 
 @pytest.mark.django_db
-def test_news_order(client, many_news_entries, news_home_url):
-    response = client.get(news_home_url)
+def test_news_order(client, many_news_entries, home_url):
+    response = client.get(home_url)
     news_list = list(response.context['news_list'])
     sorted_news_list = sorted(
         news_list,
