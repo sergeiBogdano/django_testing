@@ -6,15 +6,6 @@ from django.urls import reverse
 
 from news.models import Comment, News
 
-CLIENT_FIXTURE = pytest.lazy_fixture('client')
-HOME_URL_FIXTURE = pytest.lazy_fixture('home_url')
-NEWS_DETAIL_URL_FIXTURE = pytest.lazy_fixture('news_detail_url')
-SIGNUP_URL_FIXTURE = pytest.lazy_fixture('signup_url')
-LOGIN_URL_FIXTURE = pytest.lazy_fixture('login_url')
-LOGOUT_URL_FIXTURE = pytest.lazy_fixture('logout_url')
-COMMENT_EDIT_URL_FIXTURE = pytest.lazy_fixture('comment_edit_url')
-COMMENT_DELETE_URL_FIXTURE = pytest.lazy_fixture('comment_delete_url')
-
 
 @pytest.fixture
 def home_url():
@@ -97,28 +88,33 @@ def another_client_logged_in(client, another_user):
 
 @pytest.fixture
 def many_news_entries(db):
-    news_list = []
     base_date = datetime.now().date()
-    for i in range(222):
-        news = News(
-            title=f'Test News {i+1}',
-            text=f'Content for news {i+1}',
+    news_list = [
+        News(
+            title={i + 1},
+            text={i + 1},
             date=base_date + timedelta(days=i)
         )
-        news_list.append(news)
+        for i in range(222)
+    ]
     News.objects.bulk_create(news_list)
 
 
 @pytest.fixture
 def many_comments(db, user, news):
-    comments = [Comment(
-        text=f'Comment {i + 1}',
-        author=user,
-        news=news
-    ) for i in range(222)]
-    Comment.objects.bulk_create(comments)
-    sorted_comments = list(Comment.objects.filter(news=news).order_by('id'))
-    return sorted_comments
+    base_date = datetime.now()
+    comments = [
+        Comment(
+            text={i + 1},
+            author=user,
+            news=news,
+            created=base_date + timedelta(days=i)
+        )
+        for i in range(222)
+    ]
+    for comment in comments:
+        comment.save()
+    return sorted(comments, key=lambda c: c.id)
 
 
 @pytest.fixture
@@ -128,4 +124,14 @@ def news_home_url():
 
 @pytest.fixture
 def news_detail_url(news):
+    return reverse('news:detail', args=[news.id])
+
+
+@pytest.fixture
+def comment_edit_redirect_url(news):
+    return reverse('news:detail', args=[news.id])
+
+
+@pytest.fixture
+def comment_delete_redirect_url(news):
     return reverse('news:detail', args=[news.id])
