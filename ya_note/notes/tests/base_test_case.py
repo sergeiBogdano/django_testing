@@ -19,14 +19,14 @@ class NoteTestBase(TestCase):
 
     @classmethod
     def setUpTestData(cls):
-        cls.user1 = User.objects.create_user(
+        cls.author = User.objects.create_user(
             username='user1', password='password1'
         )
-        cls.user2 = User.objects.create_user(
+        cls.non_author = User.objects.create_user(
             username='user2', password='password2'
         )
-        cls.note1 = Note.objects.create(
-            title='Note 1', text='Content 1', author=cls.user1,
+        cls.note = Note.objects.create(
+            title='Note 1', text='Content 1', author=cls.author,
             slug='note-1'
         )
         cls.note_data = {
@@ -35,14 +35,10 @@ class NoteTestBase(TestCase):
             'slug': 'new-note'
         }
         cls.logged_in_client = Client()
-        cls.logged_in_client.force_login(cls.user1)
-        cls.logged_in_client_user1 = Client()
-        cls.logged_in_client_user1.force_login(cls.user1)
-        cls.logged_in_client_user2 = Client()
-        cls.logged_in_client_user2.force_login(cls.user2)
+        cls.logged_in_client.force_login(cls.author)
+        cls.logged_in_client_author = Client()
+        cls.logged_in_client_author.force_login(cls.author)
+        cls.logged_in_client_non_author = Client()
+        cls.logged_in_client_non_author.force_login(cls.non_author)
         cls.client_user2 = Client()
-        cls.client_user2.force_login(cls.user2)
-
-
-def get_login_redirect_url(next_url):
-    return f'{LOGIN_URL}?next={next_url}'
+        cls.client_user2.force_login(cls.non_author)
