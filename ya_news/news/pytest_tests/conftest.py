@@ -118,10 +118,10 @@ def many_comments(db, user, news):
 
 
 @pytest.fixture
-def comment_edit_redirect_url(news):
-    return news_detail_url(news)
+def comment_edit_redirect_url(login_url):
+    return login_url
 
 
 @pytest.fixture
-def comment_delete_redirect_url(news):
-    return news_detail_url(news)
+def comment_delete_redirect_url(login_url):
+    return login_url
