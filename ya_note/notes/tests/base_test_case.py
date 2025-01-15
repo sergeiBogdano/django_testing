@@ -10,9 +10,24 @@ LIST_URL = reverse('notes:list')
 SUCCESS_URL = reverse('notes:success')
 ADD_NOTE_URL = reverse('notes:add')
 LOGIN_URL = reverse('users:login')
-EDIT_NOTE_URL = '/edit/{slug}/'
-DELETE_NOTE_URL = '/delete/{slug}/'
-DETAIL_NOTE_URL = '/detail/{slug}/'
+EDIT_NOTE_ROUTE = 'notes:edit'
+DELETE_NOTE_ROUTE = 'notes:delete'
+DETAIL_NOTE_ROUTE = 'notes:detail'
+EXPECTED_REDIRECT_LIST_URL = f'{LOGIN_URL}?next={LIST_URL}'
+EXPECTED_REDIRECT_SUCCESS_URL = f'{LOGIN_URL}?next={SUCCESS_URL}'
+EXPECTED_REDIRECT_ADD_NOTE_URL = f'{LOGIN_URL}?next={ADD_NOTE_URL}'
+
+
+def get_edit_note_url(slug):
+    return reverse(EDIT_NOTE_ROUTE, kwargs={'slug': slug})
+
+
+def get_delete_note_url(slug):
+    return reverse(DELETE_NOTE_ROUTE, kwargs={'slug': slug})
+
+
+def get_detail_note_url(slug):
+    return reverse(DETAIL_NOTE_ROUTE, kwargs={'slug': slug})
 
 
 class NoteTestBase(TestCase):
@@ -34,11 +49,24 @@ class NoteTestBase(TestCase):
             'text': 'Some content',
             'slug': 'new-note'
         }
-        cls.logged_in_client = Client()
-        cls.logged_in_client.force_login(cls.author)
-        cls.logged_in_client_author = Client()
-        cls.logged_in_client_author.force_login(cls.author)
-        cls.logged_in_client_non_author = Client()
-        cls.logged_in_client_non_author.force_login(cls.non_author)
-        cls.client_user2 = Client()
-        cls.client_user2.force_login(cls.non_author)
+        cls.add_note_url = ADD_NOTE_URL
+        cls.edit_note_url = get_edit_note_url(cls.note.slug)
+        cls.delete_note_url = get_delete_note_url(cls.note.slug)
+        cls.detail_note_url = get_detail_note_url(cls.note.slug)
+
+        users_and_clients = [
+            (cls.author, 'logged_in_client'),
+            (cls.author, 'logged_in_client_author'),
+            (cls.non_author, 'logged_in_client_non_author'),
+            (cls.non_author, 'client_user2')
+        ]
+        cls.expected_redirects = {
+            LIST_URL: f'{LOGIN_URL}?next={LIST_URL}',
+            SUCCESS_URL: f'{LOGIN_URL}?next={SUCCESS_URL}',
+            ADD_NOTE_URL: f'{LOGIN_URL}?next={ADD_NOTE_URL}',
+        }
+
+        for user, client_attr in users_and_clients:
+            client = Client()
+            client.force_login(user)
+            setattr(cls, client_attr, client)

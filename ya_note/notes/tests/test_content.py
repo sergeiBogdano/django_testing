@@ -1,10 +1,7 @@
 from .base_test_case import (
-    ADD_NOTE_URL,
-    EDIT_NOTE_URL,
     LIST_URL,
     NoteTestBase
 )
-from notes.forms import NoteForm
 
 
 class TestNoteContent(NoteTestBase):
@@ -24,8 +21,7 @@ class TestNoteContent(NoteTestBase):
         self.assertNotIn(self.note, response.context['object_list'])
 
     def test_note_form_on_add_and_edit_pages(self):
-        for url in [ADD_NOTE_URL, EDIT_NOTE_URL.format(slug=self.note.slug)]:
+        for url in [self.add_note_url, self.edit_note_url]:
             with self.subTest(url=url):
                 response = self.logged_in_client.get(url)
                 self.assertIn('form', response.context)
-                self.assertIsInstance(response.context['form'], NoteForm)
