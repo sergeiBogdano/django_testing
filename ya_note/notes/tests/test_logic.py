@@ -5,7 +5,7 @@ from pytils.translit import slugify
 from notes.models import Note
 from .base_test_case import (
     ADD_NOTE_URL,
-    NoteTestBase,
+    NoteTestBase
 )
 
 
@@ -13,7 +13,10 @@ class TestLogic(NoteTestBase):
 
     def test_logged_in_user_can_create_note(self):
         initial_notes = set(Note.objects.all())
-        response = self.logged_in_client.post(ADD_NOTE_URL, self.note_data)
+        response = self.logged_in_client_author.post(
+            ADD_NOTE_URL,
+            self.note_data
+        )
         self.assertEqual(response.status_code, HTTPStatus.FOUND)
         self.assertEqual(Note.objects.count(), len(initial_notes) + 1)
         new_notes = Note.objects.exclude(
@@ -36,14 +39,20 @@ class TestLogic(NoteTestBase):
     def test_cannot_create_notes_with_same_slug(self):
         initial_notes = set(Note.objects.all())
         self.note_data['slug'] = self.note.slug
-        response = self.logged_in_client.post(ADD_NOTE_URL, self.note_data)
+        response = self.logged_in_client_author.post(
+            ADD_NOTE_URL,
+            self.note_data
+        )
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertEqual(set(Note.objects.all()), initial_notes)
 
     def test_slug_is_generated_if_not_provided(self):
         initial_notes = set(Note.objects.all())
         del self.note_data['slug']
-        response = self.logged_in_client.post(ADD_NOTE_URL, self.note_data)
+        response = self.logged_in_client_author.post(
+            ADD_NOTE_URL,
+            self.note_data
+        )
         self.assertEqual(response.status_code, HTTPStatus.FOUND)
         self.assertEqual(Note.objects.count(), len(initial_notes) + 1)
         new_notes = Note.objects.exclude(id__in=[
@@ -57,7 +66,7 @@ class TestLogic(NoteTestBase):
         self.assertEqual(new_note.slug, slugify(self.note_data['title']))
 
     def test_user_can_edit_own_note(self):
-        response = self.logged_in_client.post(
+        response = self.logged_in_client_author.post(
             self.edit_note_url,
             self.note_data
         )
@@ -70,7 +79,7 @@ class TestLogic(NoteTestBase):
 
     def test_user_can_delete_own_note(self):
         initial_note_count = Note.objects.count()
-        response = self.logged_in_client.post(self.delete_note_url)
+        response = self.logged_in_client_author.post(self.delete_note_url)
         self.assertEqual(response.status_code, HTTPStatus.FOUND)
         self.assertFalse(Note.objects.filter(id=self.note.id).exists())
         self.assertEqual(Note.objects.count(), initial_note_count - 1)

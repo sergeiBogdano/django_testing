@@ -3,11 +3,13 @@ from .base_test_case import (
     NoteTestBase
 )
 
+from notes.forms import NoteForm
+
 
 class TestNoteContent(NoteTestBase):
 
     def test_note_in_object_list(self):
-        response = self.logged_in_client.get(LIST_URL)
+        response = self.logged_in_client_author.get(LIST_URL)
         note_from_context = response.context['object_list'].get(
             id=self.note.id
         )
@@ -23,5 +25,6 @@ class TestNoteContent(NoteTestBase):
     def test_note_form_on_add_and_edit_pages(self):
         for url in [self.add_note_url, self.edit_note_url]:
             with self.subTest(url=url):
-                response = self.logged_in_client.get(url)
+                response = self.logged_in_client_author.get(url)
                 self.assertIn('form', response.context)
+                self.assertIsInstance(response.context['form'], NoteForm)
