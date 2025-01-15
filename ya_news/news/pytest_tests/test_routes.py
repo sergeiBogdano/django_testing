@@ -46,4 +46,3 @@ def test_redirect_final_url_for_anonymous(
         expected_redirect_url
 ):
     assert client.get(url_fixture).status_code == HTTPStatus.FOUND
-
