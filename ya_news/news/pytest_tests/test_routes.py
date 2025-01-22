@@ -1,7 +1,7 @@
 from http import HTTPStatus
 
 import pytest
-
+from pytest_django.asserts import assertRedirects
 
 CLIENT_FIXTURE = pytest.lazy_fixture('client')
 HOME_URL_FIXTURE = pytest.lazy_fixture('home_url')
@@ -16,6 +16,12 @@ COMMENT_EDIT_REDIRECT_URL_FIXTURE = pytest.lazy_fixture(
 )
 COMMENT_DELETE_REDIRECT_URL_FIXTURE = pytest.lazy_fixture(
     'comment_delete_redirect_url'
+)
+COMMENT_DELETE_REDIRECT_URL_FIXTURE_NEXT = pytest.lazy_fixture(
+    'comment_delete_redirect_url_with_next'
+)
+COMMENT_EDIT_REDIRECT_URL_FIXTURE_NEXT = pytest.lazy_fixture(
+    'comment_edit_redirect_url_with_next'
 )
 
 
@@ -36,13 +42,17 @@ def test_status_codes_anonymous(
     assert client_fixture.get(url_fixture).status_code == expected_status
 
 
-@pytest.mark.parametrize("url_fixture, expected_redirect_url", [
-    (COMMENT_EDIT_URL_FIXTURE, LOGIN_URL_FIXTURE),
-    (COMMENT_DELETE_URL_FIXTURE, LOGIN_URL_FIXTURE),
+@pytest.mark.parametrize("url_fixture, expected_redirect_url_fixture", [
+    (COMMENT_EDIT_URL_FIXTURE, COMMENT_EDIT_REDIRECT_URL_FIXTURE_NEXT),
+    (COMMENT_DELETE_URL_FIXTURE, COMMENT_DELETE_REDIRECT_URL_FIXTURE_NEXT),
 ])
 def test_redirect_final_url_for_anonymous(
         client,
         url_fixture,
-        expected_redirect_url
+        expected_redirect_url_fixture
 ):
-    assert client.get(url_fixture).status_code == HTTPStatus.FOUND
+    assertRedirects(
+        client.get(url_fixture),
+        expected_redirect_url_fixture,
+        fetch_redirect_response=False
+    )

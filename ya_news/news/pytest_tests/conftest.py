@@ -125,3 +125,13 @@ def comment_edit_redirect_url(login_url):
 @pytest.fixture
 def comment_delete_redirect_url(login_url):
     return login_url
+
+
+@pytest.fixture
+def comment_edit_redirect_url_with_next(comment_edit_url, login_url):
+    return f"{login_url}?next={comment_edit_url}"
+
+
+@pytest.fixture
+def comment_delete_redirect_url_with_next(comment_delete_url, login_url):
+    return f"{login_url}?next={comment_delete_url}"
