@@ -5,6 +5,9 @@ from pytils.translit import slugify
 from notes.models import Note
 from .base_test_case import (
     ADD_NOTE_URL,
+    DELETE_NOTE_URL,
+    EDIT_NOTE_URL,
+    EXPECTED_REDIRECT_ADD_NOTE_URL,
     NoteTestBase
 )
 
@@ -33,7 +36,7 @@ class TestLogic(NoteTestBase):
         initial_notes = set(Note.objects.all())
         response = self.client.post(ADD_NOTE_URL, self.note_data)
         self.assertEqual(response.status_code, HTTPStatus.FOUND)
-        self.assertRedirects(response, self.expected_redirects[ADD_NOTE_URL])
+        self.assertRedirects(response, EXPECTED_REDIRECT_ADD_NOTE_URL)
         self.assertEqual(set(Note.objects.all()), initial_notes)
 
     def test_cannot_create_notes_with_same_slug(self):
@@ -67,7 +70,7 @@ class TestLogic(NoteTestBase):
 
     def test_user_can_edit_own_note(self):
         response = self.logged_in_client_author.post(
-            self.edit_note_url,
+            EDIT_NOTE_URL,
             self.note_data
         )
         self.assertEqual(response.status_code, HTTPStatus.FOUND)
@@ -79,13 +82,13 @@ class TestLogic(NoteTestBase):
 
     def test_user_can_delete_own_note(self):
         initial_note_count = Note.objects.count()
-        response = self.logged_in_client_author.post(self.delete_note_url)
+        response = self.logged_in_client_author.post(DELETE_NOTE_URL)
         self.assertEqual(response.status_code, HTTPStatus.FOUND)
         self.assertFalse(Note.objects.filter(id=self.note.id).exists())
         self.assertEqual(Note.objects.count(), initial_note_count - 1)
 
     def test_user_cannot_delete_others_note(self):
-        response = self.logged_in_client_non_author.post(self.delete_note_url)
+        response = self.logged_in_client_non_author.post(DELETE_NOTE_URL)
         self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
         note = Note.objects.get(id=self.note.id)
         self.assertEqual(note.title, self.note.title)

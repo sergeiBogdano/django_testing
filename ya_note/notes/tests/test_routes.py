@@ -2,9 +2,12 @@ from http import HTTPStatus
 
 from .base_test_case import (
     ADD_NOTE_URL,
+    EXPECTED_REDIRECT_ADD_NOTE_URL,
+    EXPECTED_REDIRECT_LIST_URL,
+    EXPECTED_REDIRECT_SUCCESS_URL,
     LIST_URL,
     NoteTestBase,
-    SUCCESS_URL,
+    SUCCESS_URL
 )
 
 
@@ -25,18 +28,19 @@ class TestRoutes(NoteTestBase):
 
         for client, url, expected_status in client_url_status:
             with self.subTest(client=client, url=url):
-                response = client.get(url)
-                self.assertEqual(response.status_code, expected_status)
+                self.assertEqual(client.get(url).status_code, expected_status)
 
     def test_final_urls_after_redirects(self):
+        expected_redirects = {
+            LIST_URL: EXPECTED_REDIRECT_LIST_URL,
+            SUCCESS_URL: EXPECTED_REDIRECT_SUCCESS_URL,
+            ADD_NOTE_URL: EXPECTED_REDIRECT_ADD_NOTE_URL,
+        }
+
         redirect_tests = [
-            (self.client, LIST_URL, self.expected_redirects[LIST_URL]),
-            (self.client, SUCCESS_URL, self.expected_redirects[SUCCESS_URL]),
-            (
-                self.client,
-                ADD_NOTE_URL,
-                self.expected_redirects[ADD_NOTE_URL]
-            ),
+            (self.client, LIST_URL, expected_redirects[LIST_URL]),
+            (self.client, SUCCESS_URL, expected_redirects[SUCCESS_URL]),
+            (self.client, ADD_NOTE_URL, expected_redirects[ADD_NOTE_URL]),
         ]
 
         for client, initial_url, expected_final_url in redirect_tests:
